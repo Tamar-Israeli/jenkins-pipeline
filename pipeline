@@ -11,7 +11,6 @@ pipeline {
     stages {
         stage('Clone Flask Project') {
             steps {
-                // Use the Git plugin to clone the repository
                 git branch: 'jenkins-workshop', url: 'https://github.com/Tamar-Israeli/devopshift-welcome.git'
             }
         }
@@ -28,9 +27,9 @@ pipeline {
                         fi
 
                         # Delete previously built virtualenv and create a new one
-                        rm -rf $PYENV_HOME
-                        virtualenv $PYENV_HOME
-                        source $PYENV_HOME/bin/activate
+                        rm -rf "$PYENV_HOME"
+                        virtualenv "$PYENV_HOME"
+                        source "$PYENV_HOME/bin/activate"
 
                         # Install required Python packages
                         pip install -r requirements.txt
@@ -46,7 +45,7 @@ pipeline {
                     script {
                         // Run Flask app within the virtual environment
                         sh '''#!/bin/bash
-                        source $PYENV_HOME/bin/activate
+                        source "$PYENV_HOME/bin/activate"
                         tasks=$(pgrep -f "flask run")
                         if [ -n "$tasks" ]; then
                             echo "Stopping existing Flask application..."
@@ -75,7 +74,7 @@ pipeline {
                         def tasks = sh(script: "pgrep -f 'flask run'", returnStatus: true) ? '' : sh(script: "pgrep -f 'flask run'", returnStdout: true).trim()
                         if (!tasks) {
                             // Print error message and show the flask_app.log file content
-                            echo "There is a problem with our flask application - printing log below"
+                            echo "There is a problem with our Flask application - printing log below"
                             sh 'cat flask_app.log'
                             error "Flask application is not running!"
                         } else {
@@ -85,22 +84,18 @@ pipeline {
                 }
             }
         }
-    }
+
         stage('Wait for User Approval') {
             steps {
                 script {
-                    // Wait for user interaction and store the result
                     def userInput = input message: 'Is the application running successfully?',
                                          parameters: [choice(name: 'Proceed', choices: 'Proceed\nAbort', description: 'Choose an option')]
-                    // Set a variable based on user input
                     env.USER_CHOICE = userInput
                 }
             }
         }
 
         stage('Continue the pipeline') {
-            // Run this stage ONLY! if the user chooses 'Proceed'
-
             when {
                 expression { env.USER_CHOICE == 'Proceed' }
             }
@@ -112,7 +107,6 @@ pipeline {
         }
 
         stage('Abort the Pipeline') {
-            // Run this stage ONLY! if the user chooses 'Abort'
             when {
                 expression { env.USER_CHOICE == 'Abort' }
             }
@@ -123,55 +117,6 @@ pipeline {
             }
         }
 
-        // Run this stage regardless of the user choice but we will check the user choice in the stage and print a message
-        stage('Finalize the Pipeline') {
-            steps {
-                script {
-                    if (env.USER_CHOICE == 'Proceed') {
-                        echo 'Pipeline completed successfully'
-                    } else {
-                        echo 'Pipeline aborted by the user'
-                    }
-                }
-            }
-        }        stage('Wait for User Approval') {
-            steps {
-                script {
-                    // Wait for user interaction and store the result
-                    def userInput = input message: 'Is the application running successfully?',
-                                         parameters: [choice(name: 'Proceed', choices: 'Proceed\nAbort', description: 'Choose an option')]
-                    // Set a variable based on user input
-                    env.USER_CHOICE = userInput
-                }
-            }
-        }
-
-        stage('Continue the pipeline') {
-            // Run this stage ONLY! if the user chooses 'Proceed'
-
-            when {
-                expression { env.USER_CHOICE == 'Proceed' }
-            }
-            steps {
-                script {
-                    echo 'Continuing the pipeline...'
-                }
-            }
-        }
-
-        stage('Abort the Pipeline') {
-            // Run this stage ONLY! if the user chooses 'Abort'
-            when {
-                expression { env.USER_CHOICE == 'Abort' }
-            }
-            steps {
-                script {
-                    error 'Pipeline aborted by the user'
-                }
-            }
-        }
-
-        // Run this stage regardless of the user choice but we will check the user choice in the stage and print a message
         stage('Finalize the Pipeline') {
             steps {
                 script {
@@ -183,12 +128,13 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         always {
             dir("${PROJECT_HOME}") {
                 echo 'Cleaning up workspace...'
-                sh 'rm -rf $PYENV_HOME'
+                sh 'rm -rf "$PYENV_HOME"'
             }
         }
     }
