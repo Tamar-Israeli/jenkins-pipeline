@@ -11,7 +11,12 @@ pipeline {
     stages {
         stage('Clone Flask Project') {
             steps {
-                git branch: 'jenkins-workshop', url: 'https://github.com/Tamar-Israeli/devopshift-welcome.git'
+               script {
+                    def userInput = input message: 'enter repository URL',
+                                         parameters: [choice(name: 'RepoURL', defaultValue: 'https://github.com/Tamar-Israeli/devopshift-welcome.git', description: 'enter the reposutory URL')]
+                    env.REO_URL = userInput
+                }
+                git branch: 'jenkins-workshop', url: env.REO_URL
             }
         }
 
